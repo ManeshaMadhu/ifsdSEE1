@@ -1,0 +1,215 @@
+import React from 'react';
+import WidgetWrapper from 'components/WidgetWrapper';
+
+class ActorInput extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      name: '',
+      cost: 0,
+      editingIndex: -1,
+    };
+  }
+
+  componentDidMount() {
+    const { editingIndex, actors } = this.props;
+    if (editingIndex > -1) {
+      const actor = actors[editingIndex];
+      this.setState({
+        name: actor.name,
+        cost: actor.cost,
+        editingIndex,
+      });
+    }
+  }
+
+  componentDidUpdate(prevProps) {
+    const { editingIndex, actors } = this.props;
+    if (editingIndex !== prevProps.editingIndex) {
+      if (editingIndex > -1) {
+        const actor = actors[editingIndex];
+        this.setState({
+          name: actor.name,
+          cost: actor.cost,
+          editingIndex,
+        });
+      } else {
+        this.setState({
+          name: '',
+          cost: 0,
+          editingIndex: -1,
+        });
+      }
+    }
+  }
+
+  handleInputChange = (event) => {
+    this.setState({ [event.target.name]: event.target.value });
+  };
+
+  handleAddActor = () => {
+    const { name, cost, editingIndex } = this.state;
+    if (editingIndex > -1) {
+      this.props.onUpdateActor(editingIndex, name, parseInt(cost));
+    } else {
+      this.props.onAddActor(name, parseInt(cost));
+    }
+    this.setState({ name: '', cost: 0, editingIndex: -1 });
+  };
+
+  handleCancelEdit = () => {
+    this.props.onCancelEdit();
+  };
+
+  render() {
+    const { name, cost, editingIndex } = this.state;
+    return (
+        <WidgetWrapper>
+      <div>
+        <h3>{editingIndex > -1 ? 'Edit Actor' : 'Add Actor'}</h3>
+        <div>
+          <label>Name:</label>
+          <input
+            type="text"
+            name="name"
+            value={name}
+            onChange={this.handleInputChange}
+          />
+        </div>
+        <div>
+          <label>Cost:</label>
+          <input
+            type="number"
+            name="cost"
+            value={cost}
+            onChange={this.handleInputChange}
+          />
+        </div>
+        <button onClick={this.handleAddActor}>
+          {editingIndex > -1 ? 'Update Actor' : 'Add Actor'}
+        </button>
+        {editingIndex > -1 && (
+          <button onClick={this.handleCancelEdit}>Cancel</button>
+        )}
+      </div>
+      </WidgetWrapper>
+    );
+  }
+}
+
+class Movie extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      movieName: '',
+      numActors: 0,
+      actors: [],
+      totalCost: 0,
+      editingIndex: -1,
+    };
+  }
+
+  handleInputChange = (event) => {
+    this.setState({ [event.target.name]: event.target.value });
+  };
+
+  handleAddActor = (name, cost) => {
+    const { actors, numActors } = this.state;
+    if (actors.length < numActors) {
+      const actor = { name, cost };
+      this.setState((prevState) => ({
+        actors: [...prevState.actors, actor],
+      }));
+    }
+  };
+
+  handleUpdateActor = (index, name, cost) => {
+    const { actors } = this.state;
+    const updatedActors = [...actors];
+    updatedActors[index] = { name, cost };
+    this.setState({ actors: updatedActors, editingIndex: -1 });
+  };
+
+  handleDeleteActor = (index) => {
+    const { actors } = this.state;
+    const updatedActors = [...actors];
+    updatedActors.splice(index, 1);
+    this.setState({ actors: updatedActors, editingIndex: -1 });
+  };
+
+  handleEditActor = (index) => {
+    this.setState({ editingIndex: index });
+  };
+
+  handleCancelEdit = () => {
+    this.setState({ editingIndex: -1 });
+  };
+
+  calculateTotalCost = () => {
+    const { actors } = this.state;
+    let totalCost = 0;
+    for (const actor of actors) {
+      totalCost += actor.cost;
+    }
+    this.setState({ totalCost });
+  };
+
+  render() {
+    const { movieName, numActors, actors, totalCost, editingIndex } = this.state;
+    return (
+        <WidgetWrapper>
+      <div>
+        <h2>Movie Information</h2>
+        <div>
+          <label>Movie Name:</label>
+          <input
+            type="text"
+            name="movieName"
+            value={movieName}
+            onChange={this.handleInputChange}
+          />
+        </div>
+        <div>
+          <label>Number of Actors:</label>
+          <input
+            type="number"
+            name="numActors"
+            value={numActors}
+            onChange={this.handleInputChange}
+          />
+        </div>
+        <ActorInput
+          onAddActor={this.handleAddActor}
+          onUpdateActor={this.handleUpdateActor}
+          onCancelEdit={this.handleCancelEdit}
+          actors={actors}
+          editingIndex={editingIndex}
+          maxActors={numActors}
+        />
+        <h3>Actors:</h3>
+        <ul>
+          {actors.map((actor, index) => (
+            <li key={index}>
+              Name: {actor.name}, Cost: {actor.cost}
+              {editingIndex === -1 && (
+                <span>
+                  <button onClick={() => this.handleEditActor(index)}>
+                    Edit
+                  </button>
+                  <button onClick={() => this.handleDeleteActor(index)}>
+                    Delete
+                  </button>
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+        <button onClick={this.calculateTotalCost}>Calculate Total Cost</button>
+        <p>Total Cost: {totalCost}</p>
+      </div>
+      </WidgetWrapper>
+    );
+  }
+}
+
+export default Movie;
